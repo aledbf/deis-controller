@@ -30,15 +30,11 @@ POD_BTEMPLATE = """\
     "containers": [
       {
         "name": "$id",
-        "image": "$slugimage",
+        "image": "$image",
         "env": [
         {
             "name":"PORT",
             "value":"5000"
-        },
-        {
-            "name":"SLUG_URL",
-            "value":"$image"
         },
         {
             "name": "DOCKERIMAGE",
@@ -130,7 +126,25 @@ RCD_TEMPLATE = """\
                 "name":"DEIS_RELEASE",
                 "value":"$appversion"
             }
-            ]
+            ],
+            "healthcheck": {
+                "livenessProbe": {
+                    "httpGet": {
+                        "path": "/health-check",
+                        "port": 5000
+                    },
+                    "initialDelaySeconds": 10,
+                    "timeoutSeconds": 2
+                },
+                "readinessProbe": {
+                    "httpGet": {
+                        "path": "/health-check",
+                        "port": 5000
+                    },
+                    "initialDelaySeconds": 10,
+                    "timeoutSeconds": 2
+                }
+            }
           }
         ],
         "nodeSelector": {}
@@ -174,16 +188,11 @@ RCB_TEMPLATE = """\
         "containers": [
           {
             "name": "$containername",
-            "image": "$slugimage",
-            "imagePullPolicy": "Always",
+            "image": "$image",
             "env": [
             {
                 "name":"PORT",
                 "value":"5000"
-            },
-            {
-                "name":"SLUG_URL",
-                "value":"$image"
             },
             {
                 "name":"DEIS_APP",
@@ -198,6 +207,24 @@ RCB_TEMPLATE = """\
                 "value":"1"
             }
             ],
+            "healthcheck": {
+                "livenessProbe": {
+                    "httpGet": {
+                        "path": "/health-check",
+                        "port": 5000
+                    },
+                    "initialDelaySeconds": 10,
+                    "timeoutSeconds": 2
+                },
+                "readinessProbe": {
+                    "httpGet": {
+                        "path": "/health-check",
+                        "port": 5000
+                    },
+                    "initialDelaySeconds": 10,
+                    "timeoutSeconds": 2
+                }
+            },
             "volumeMounts":[
             {
                 "name":"minio-user",
@@ -239,7 +266,7 @@ SERVICE_TEMPLATE = """\
       {
         "name": "http",
         "port": 80,
-        "targetPort": 8080,
+        "targetPort": 5000,
         "protocol": "TCP"
       }
     ],
@@ -859,6 +886,8 @@ class KubeHTTPClient(object):
         tags = kwargs.get('tags', {})
         template["spec"]["template"]["spec"]["nodeSelector"] = tags
 
+        template["spec"]["imagePullSecrets"] = settings.IMAGE_PULL_SECRETS
+
         # Deal with container information
         container = template["spec"]["template"]["spec"]["containers"][0]
         container['args'] = args
@@ -911,7 +940,7 @@ class KubeHTTPClient(object):
 
         return response
 
-    def _healthcheck(self, controller, path='/', port=8080, delay=30, timeout=1):
+    def _healthcheck(self, controller, path='/', port=5000, delay=30, timeout=1):
         # FIXME this logic ideally should live higher up
         app_type = controller['spec']['selector']['type']
         if app_type not in ['web', 'cmd']:
