@@ -127,23 +127,21 @@ RCD_TEMPLATE = """\
                 "value":"$appversion"
             }
             ],
-            "healthcheck": {
-                "livenessProbe": {
-                    "httpGet": {
-                        "path": "/health-check",
-                        "port": 5000
-                    },
-                    "initialDelaySeconds": 10,
-                    "timeoutSeconds": 2
+            "livenessProbe": {
+                "httpGet": {
+                    "path": "/health-check",
+                    "port": 5000
                 },
-                "readinessProbe": {
-                    "httpGet": {
-                        "path": "/health-check",
-                        "port": 5000
-                    },
-                    "initialDelaySeconds": 10,
-                    "timeoutSeconds": 2
-                }
+                "initialDelaySeconds": 10,
+                "timeoutSeconds": 2
+            },
+            "readinessProbe": {
+                "httpGet": {
+                    "path": "/health-check",
+                    "port": 5000
+                },
+                "initialDelaySeconds": 10,
+                "timeoutSeconds": 2
             }
           }
         ],
@@ -207,23 +205,21 @@ RCB_TEMPLATE = """\
                 "value":"1"
             }
             ],
-            "healthcheck": {
-                "livenessProbe": {
-                    "httpGet": {
-                        "path": "/health-check",
-                        "port": 5000
-                    },
-                    "initialDelaySeconds": 10,
-                    "timeoutSeconds": 2
+            "livenessProbe": {
+                "httpGet": {
+                    "path": "/health-check",
+                    "port": 5000
                 },
-                "readinessProbe": {
-                    "httpGet": {
-                        "path": "/health-check",
-                        "port": 5000
-                    },
-                    "initialDelaySeconds": 10,
-                    "timeoutSeconds": 2
-                }
+                "initialDelaySeconds": 10,
+                "timeoutSeconds": 2
+            },
+            "readinessProbe": {
+                "httpGet": {
+                    "path": "/health-check",
+                    "port": 5000
+                },
+                "initialDelaySeconds": 10,
+                "timeoutSeconds": 2
             },
             "volumeMounts":[
             {
@@ -623,7 +619,7 @@ class KubeHTTPClient(object):
             image = self.registry + '/' + image
             repo = image.split(":")
             # image already includes the tag, so we split it out here
-            docker_cli = Client(version="auto")
+            docker_cli = Client(version="auto", timeout=300)
             docker_cli.pull(repo[0]+":"+repo[1], tag=repo[2], insecure_registry=True)
             image_info = docker_cli.inspect_image(image)
             port = int(list(image_info['Config']['ExposedPorts'].keys())[0].split("/")[0])
