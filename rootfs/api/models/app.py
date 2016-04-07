@@ -278,7 +278,7 @@ class App(UuidAuditedModel):
     def _scale_pods(self, scale_types):
         release = self.release_set.latest()
         build_type = app_build_type(release)
-        for scale_type in scale_types:
+        for scale_type, replicas in scale_types.items():
             image = release.image
             version = "v{}".format(release.version)
             kwargs = {
@@ -287,7 +287,7 @@ class App(UuidAuditedModel):
                 'tags': release.config.tags,
                 'envs': release.config.values,
                 'version': version,
-                'replicas': scale_types[scale_type],
+                'replicas': replicas,
                 'app_type': scale_type,
                 'build_type': build_type,
                 'healthcheck': release.config.healthcheck()
@@ -322,7 +322,7 @@ class App(UuidAuditedModel):
 
         # deploy application to k8s. Also handles initial scaling
         build_type = app_build_type(release)
-        for scale_type in self.structure.keys():
+        for scale_type, replicas in self.structure.items():
             image = release.image
             version = "v{}".format(release.version)
             kwargs = {
@@ -330,7 +330,7 @@ class App(UuidAuditedModel):
                 'cpu': release.config.cpu,
                 'tags': release.config.tags,
                 'envs': release.config.values,
-                'replicas': 0,  # Scaling up happens in a separate operation
+                'replicas': replicas,  # Scaling up happens in a separate operation
                 'version': version,
                 'app_type': scale_type,
                 'build_type': build_type,
