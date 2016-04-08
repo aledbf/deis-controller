@@ -1,4 +1,4 @@
-FROM alpine:3.3
+FROM alpine:edge
 
 # install common packages
 RUN apk add --update-cache curl bash openssl sudo && rm -rf /var/cache/apk/*

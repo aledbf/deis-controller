@@ -113,6 +113,7 @@ RCD_TEMPLATE = """\
         }
       },
       "spec": {
+        "terminationGracePeriodSeconds": 5,
         "containers": [
           {
             "name": "$containername",
