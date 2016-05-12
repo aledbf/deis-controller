@@ -53,6 +53,8 @@ class Release(UuidAuditedModel):
             self.build.image.startswith(settings.REGISTRY_HOST) or
             self.build.image.startswith(settings.REGISTRY_URL)
         ):
+
+            return self.build.image
             # strip registry information off first
             image = self.build.image.replace('{}/'.format(settings.REGISTRY_URL), '')
             return image.replace('{}/'.format(settings.REGISTRY_HOST), '')
@@ -66,7 +68,7 @@ class Release(UuidAuditedModel):
             return '{}/{}:v{}'.format(settings.REGISTRY_URL, self.app.id, str(self.version))
         elif self.build.type == 'buildpack':
             # Build Pack - Registry URL not prepended since slugrunner image will download slug
-            return self.build.image
+            return '{}/{}'.format(settings.REGISTRY_URL, self.build.image)
 
     def new(self, user, config, build, summary=None, source_version='latest'):
         """
@@ -291,7 +293,12 @@ class Release(UuidAuditedModel):
         }
         secrets = self._scheduler._get_secrets(self.app.id, labels=labels).json()
         for secret in secrets['items']:
-            current_version = secret['metadata']['labels']['version']
+            # earlier iterations did not have version labels
+            if 'version' not in secret['metadata']['labels']:
+                current_version = 'v0'
+            else:
+                current_version = secret['metadata']['labels']['version']
+
             # skip the latest release
             if current_version == latest_version:
                 continue
