@@ -264,26 +264,42 @@ class Pod(Resource):
         return mem
 
     def _set_health_checks(self, container, env, **kwargs):
-        healthchecks = kwargs.get('healthcheck', None)
-        if healthchecks:
-            # check if a port is present. if not, auto-populate it
-            # TODO: rip this out when we stop supporting deis config:set HEALTHCHECK_URL
-            if (
-                healthchecks.get('livenessProbe') is not None and
-                healthchecks['livenessProbe'].get('httpGet') is not None and
-                healthchecks['livenessProbe']['httpGet'].get('port') is None
-            ):
-                healthchecks['livenessProbe']['httpGet']['port'] = env['PORT']
-            container.update(healthchecks)
-        elif kwargs.get('routable', False):
-            self._default_readiness_probe(container, kwargs.get('build_type'), env.get('PORT', None))  # noqa
+        delay = int(env.get('INITIAL_DELAY', 15))
+        port = env.get('PORT', '5000')
+        
+        livenessProbe = {
+            'livenessProbe': {
+                'httpGet': {
+                    'path': '/health-check',
+                    'port': int(port),
+                    'scheme': 'HTTP'
+                },
+                'initialDelaySeconds': delay + 1,
+                'timeoutSeconds': 2,
+                'periodSeconds': 5,
+                'successThreshold': 1,
+                'failureThreshold': 3,
+            },
+        }
 
-    def _default_readiness_probe(self, container, build_type, port=None):
-        # Update only the application container with the health check
-        if build_type == "buildpack":
-            container.update(self._default_buildpack_readiness_probe())
-        elif port:
-            container.update(self._default_dockerapp_readiness_probe(port))
+        readinessprobe = {
+            'readinessProbe': {
+                'httpGet': {
+                    'path': '/health-check',
+                    'port': int(port),
+                    'scheme': 'HTTP'
+                },
+                'initialDelaySeconds': delay,
+                'timeoutSeconds': 2,
+                'periodSeconds': 5,
+                'successThreshold': 1,
+                'failureThreshold': 3,
+            },
+        }
+
+        container.update(livenessProbe)
+        container.update(readinessprobe)
+
 
     """
     Applies exec readiness probe to the slugrunner container.
@@ -299,7 +315,7 @@ class Pod(Resource):
     This should be added only for the build pack apps when a custom liveness probe is not set to
     make sure that the pod is ready only when the slug is downloaded and started running.
     """
-    def _default_buildpack_readiness_probe(self, delay=30, timeout=5, period_seconds=5,
+    def _default_buildpack_readiness_probe(self, delay=15, timeout=5, period_seconds=5,
                                            success_threshold=1, failure_threshold=1):
         readinessprobe = {
             'readinessProbe': {
@@ -323,16 +339,17 @@ class Pod(Resource):
         return readinessprobe
 
     def _default_dockerapp_readiness_probe(self, port, delay=5, timeout=5, period_seconds=5,
-                                           success_threshold=1, failure_threshold=1):
+                                           success_threshold=1, failure_threshold=3):
         """
         Applies tcp socket readiness probe to the docker app container only if some port is exposed
         by the docker image.
         """
         readinessprobe = {
             'readinessProbe': {
-                # an exec probe
-                'tcpSocket': {
-                    "port": int(port)
+                'httpGet': {
+                    'path': '/health-check',
+                    'port': int(port),
+                    'scheme': 'HTTP'
                 },
                 # length of time to wait for a pod to initialize
                 # after pod startup, before applying health checking

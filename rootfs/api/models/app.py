@@ -414,7 +414,8 @@ class App(UuidAuditedModel):
         app_settings = self.appsettings_set.latest()
 
         # use slugrunner image for app if buildpack app otherwise use normal image
-        image = settings.SLUGRUNNER_IMAGE if release.build.type == 'buildpack' else release.image
+        # image = settings.SLUGRUNNER_IMAGE if release.build.type == 'buildpack' else release.image
+        image = release.image
 
         tasks = []
         for scale_type, replicas in scale_types.items():

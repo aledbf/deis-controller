@@ -38,6 +38,8 @@ class Release(UuidAuditedModel):
 
     @property
     def image(self):
+        return self.build.image
+        
         if (settings.REGISTRY_LOCATION != 'on-cluster'):
             return self.build.image
         # Builder pushes to internal registry, exclude SHA based images from being returned
@@ -65,7 +67,7 @@ class Release(UuidAuditedModel):
             return '{}/{}:git-{}'.format(settings.REGISTRY_URL, self.app.id, str(self.build.sha))
         elif self.build.type == 'image':
             # Deis Pull, docker image in local registry
-            return '{}/{}:v{}'.format(settings.REGISTRY_URL, self.app.id, str(self.version))
+            return '{}/{}:v{}'.format(settings.REGISTRY_URL, self.app.id, str(self.sha))
         elif self.build.type == 'buildpack':
             # Build Pack - Registry URL not prepended since slugrunner image will download slug
             return self.build.image
