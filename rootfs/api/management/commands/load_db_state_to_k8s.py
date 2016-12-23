@@ -1,3 +1,5 @@
+import sys
+
 from django.core.management.base import BaseCommand
 from django.shortcuts import get_object_or_404
 
@@ -24,19 +26,24 @@ class Command(BaseCommand):
         # deploy applications
         print("Deploying available applications")
         for application in App.objects.all():
-            rel = application.release_set.filter(failed=False).latest()
-            if rel.build is None:
-                print('WARNING: {} has no build associated with '
-                      'its latest release. Skipping deployment...'.format(application))
-                continue
-
             try:
-                application.deploy(rel)
-            except AlreadyExists as error:
-                print('WARNING: {} has a deployment in progress. '
-                      'Skipping deployment...'.format(application))
-                continue
-            except DeisException as error:
+                rel = application.release_set.filter(failed=False).latest()
+                if rel.build is None:
+                    print('WARNING: {} has no build associated with '
+                          'its latest release. Skipping deployment...'.format(application))
+                    continue
+
+                try:
+                    application.deploy(rel)
+                except AlreadyExists as error:
+                    print('WARNING: {} has a deployment in progress. '
+                          'Skipping deployment...'.format(application))
+                    continue
+                except DeisException as error:
+                    print('ERROR: There was a problem deploying {} '
+                          'due to {}'.format(application, str(error)))
+            except:
+                error = sys.exc_info()[0]
                 print('ERROR: There was a problem deploying {} '
                       'due to {}'.format(application, str(error)))
 
