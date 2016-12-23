@@ -133,21 +133,21 @@ class Pod(Resource):
         spec['terminationGracePeriodSeconds'] = kwargs.get('pod_termination_grace_period_seconds', 30)  # noqa
 
         # Check if it is a slug builder image.
-        if build_type == "buildpack":
-            # add the required volume to the top level pod spec
-            spec['volumes'] = [{
-                'name': 'objectstorage-keyfile',
-                'secret': {
-                    'secretName': 'objectstorage-keyfile'
-                }
-            }]
+        #if build_type == "buildpack":
+        #    # add the required volume to the top level pod spec
+        #    spec['volumes'] = [{
+        #        'name': 'objectstorage-keyfile',
+        #        'secret': {
+        #            'secretName': 'objectstorage-keyfile'
+        #        }
+        #    }]
 
-            # added to kwargs to send to the container function
-            kwargs['volumeMounts'] = [{
-                'name': 'objectstorage-keyfile',
-                'mountPath': '/var/run/secrets/deis/objectstore/creds',
-                'readOnly': True
-            }]
+        #    # added to kwargs to send to the container function
+        #    kwargs['volumeMounts'] = [{
+        #        'name': 'objectstorage-keyfile',
+        #        'mountPath': '/var/run/secrets/deis/objectstore/creds',
+        #        'readOnly': True
+        #    }]
 
         # create the base container
         container = {}
